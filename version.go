@@ -435,8 +435,8 @@ func (db *DB) Rollback(version string) error {
 	return nil
 }
 
-// reset resets all migration data.
-func (db *DB) reset() error {
+// Reset resets all migration data.
+func (db *DB) Reset() error {
 	_, err := db.DeleteRows(&SchemaMigration{}, sqlq.All())
 	if err != nil {
 		return err

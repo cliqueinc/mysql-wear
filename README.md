@@ -24,6 +24,8 @@ func main() {
     panic(err)
   }
 ```
+<b>Important!</b> Make sure db connection has an option `parseTime=true`, othervise time.Time struct will not be parsed correctly!
+
 Then, we can initialize mysql-wear wrapper for dealing with CRUD mysql operations:
 ```golang
 db := mw.New(mysqlDB)
@@ -432,17 +434,36 @@ if err := mw.InitSchema(); err != nil {
 
 ### <strong>mw commands</strong>
 
-- #### mwcmd init
+In order to deal with mysql migration, you can install `mwcmd` tool:
+- go to `mwcmd` directory, then execute:
+```bash
+go install
+```
 
+#### Before using
+
+`mwcmd` tool initializes db connection from ENV vars:
+  - DB_NAME - name of the database, required.
+  - DB_MIGRATION_PATH - path to migratons directory, required. Example: `./db/migrations`
+  - DB_USER - db user name, root by default.
+  - DB_PASSWORD - db password.
+  - DB_PORT - db port, 3306 by default
+  - DB_HOST - db host, 127.0.0.1 by default
+  - DB_USE_TLS - whether to use tls, false by default
+
+Example usage:
+```bash
+DB_PASSWORD=root DB_PORT=3406 DB_MIGRATION_PATH=./migrations DB_NAME=mw_tmp mwcmd status
+```
+
+- #### mwcmd init
   Creates required mw schema tables.
-  `mw init` also ensures all executed migrations exist in corresponding files.
+  `mwcmd init` also ensures all executed migrations exist in corresponding files.
 
 - #### mwcmd up
-
   Checks is there any migration that needs to be executed, and executes them in ascending order.
 
-- #### mwcmd migration [default]
-
+- #### mwcmd new-migration [default]
   Generates new migration file, see `Migration file internals` for more info. If the next argument is `default`, the migration 0000-00-00:00:00:00.sql
   will be generated. It won't be added to migration log and won't be executed unless you explicitly call `exec default`. It is made in order to have
   an ability to keep existing schema, which needs to be executed only once, and most likely, only in local environment.
@@ -476,7 +497,7 @@ if err := mw.InitSchema(); err != nil {
 
 ## Testing Notes
 
-- You can simply run `go test -v ./...` inside this directory to run all the tests.
+- You can simply run `go test -v inside this directory to run all the tests.
 - See conn_test.go for the main test function and details
 - Due to the way we configure the tmp/test db, running an individual test should be accomplished
   via `go test -v -run=TestName`

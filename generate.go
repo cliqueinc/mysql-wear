@@ -131,8 +131,8 @@ const createTableTemplate = `
 
 CREATE TABLE ` + "`{{.TableName}}`" + `(
 	{{ range $i, $e := .Fields }}
-	{{- if eq $i (minus (len $.Fields) 1) }}{{$e.MWName}} {{$e.MWType}}
-	{{- else -}} {{$e.MWName}} {{$e.MWType}},
+	{{- if eq $i (minus (len $.Fields) 1) }}{{$e.MWNameQuoted}} {{$e.MWType}}
+	{{- else -}} {{$e.MWNameQuoted}} {{$e.MWType}},
 	{{end -}}
 {{- end }}
 );
@@ -147,25 +147,54 @@ func New{{.StructName}}() *{{.StructName}}{
 	return &{{.StructName}}{}
 }
 
-func Get{{.StructName}}(id string) *{{.StructName}}{
+func Get{{.StructName}}(db *mw.DB, id {{ .GetPKField.ReflectType.String }}) (*{{.StructName}}, error) {
 	{{.ShortName}} := &{{.StructName}}{ID: id}
-	pgc.Get({{.ShortName}})
-	return {{.ShortName}}
+	found, err := db.Get({{.ShortName}})
+	if err != nil {
+		return nil, err
+	}
+	if !found {
+		return nil, nil
+	}
+	return {{.ShortName}}, nil
 }
 
-func ({{.ShortName}} *{{.StructName}}) Insert(){
+func ({{.ShortName}} *{{.StructName}}) Insert(db *mw.DB) error {
 	{{.ShortName}}.Created = time.Now().UTC()
 	{{.ShortName}}.Updated = time.Now().UTC()
-	pgc.Insert({{.ShortName}})
+	res, err := db.Insert({{.ShortName}})
+	if err != nil {
+		return err
+	}
+	{{ if .IsIntPK -}}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("fail get last id: %v", err)
+	}
+	{{ if eq .GetPKKind 2 -}}
+	{{.ShortName}}.ID = int(id)
+	{{ else if eq .GetPKKind 5 -}}
+	{{.ShortName}}.ID = int32(id)
+	{{ else -}}
+	{{.ShortName}}.ID = id
+	{{ end -}}
+	{{ end -}}
+	return nil
 }
 
-func ({{.ShortName}} *{{.StructName}}) Update(){
+func ({{.ShortName}} *{{.StructName}}) Update(db *mw.DB) error {
 	{{.ShortName}}.Updated = time.Now().UTC()
-	pgc.Update({{.ShortName}})
+	if err := db.Update({{.ShortName}}); err != nil {
+		return err
+	}
+	return nil
 }
 
-func ({{.ShortName}} *{{.StructName}}) Delete(){
-	pgc.Delete({{.ShortName}})
+func ({{.ShortName}} *{{.StructName}}) Delete(db *mw.DB) error {
+	if err := db.Delete({{.ShortName}}); err != nil {
+		return err
+	}
+	return nil
 }
 
 `
@@ -177,12 +206,14 @@ const modelTestTemplate = `
 
 import (
 	"testing"
+	mw "github.com/cliqueinc/mysql-wear"
 )
 
+var db *mw.DB
+
 func init() {
-	if !pgc.GetConfig().Initialized {
-		pgc.InitFromEnv()
-	}
+	// suppose you have some helper code for initializing db connection
+	db = dbtest.InitDB()
 }
 
 func Test{{.StructName}}CRUD(t *testing.T){
@@ -190,23 +221,32 @@ func Test{{.StructName}}CRUD(t *testing.T){
 	// Fill in struct properties here, especially the ID/PK field
 
 
-	{{.ShortName}}.Insert()
+	if err := {{.ShortName}}.Insert(db); err != nil {
+		log.Fatalf("insert failed: %v", err)
+	}
 
 	// Make sure we can get the newly inserted object
-	{{.ShortName}}2 := Get{{.StructName}}({{.ShortName}}.ID)
-
+	{{.ShortName}}2, err := Get{{.StructName}}(db, {{.ShortName}}.ID)
+	if err != nil {
+		log.Fatalf("fail get item {{ if .IsIntPK }}%d{{else}}%s{{end}}: %v", {{.ShortName}}.ID, err)
+	}
 	if {{.ShortName}}2 == nil {
-		t.Fatalf("Didnt find newly inserted row with ID %s", {{.ShortName}}.ID)
+		t.Fatalf("Didnt find newly inserted row with ID {{ if .IsIntPK }}%d{{else}}%s{{end}}", {{.ShortName}}.ID)
 	}
 	// Make some changes to {{.ShortName}} here
 
 
-	{{.ShortName}}.Update()
+	if err := {{.ShortName}}.Update(db); err != nil {
+		log.Fatalf("id ({{ if .IsIntPK }}%d{{else}}%s{{end}}): update failed: %v", {{.ShortName}}.ID, err)
+	}
 
 	// Make sure those changes took effect
-	{{.ShortName}}3 := Get{{.StructName}}({{.ShortName}}.ID)
+	{{.ShortName}}3, err := Get{{.StructName}}(db, {{.ShortName}}.ID)
+	if err != nil {
+		log.Fatalf("fail get item {{ if .IsIntPK }}%d{{else}}%s{{end}}: %v", {{.ShortName}}3.ID, err)
+	}
 	if {{.ShortName}}3 == nil {
-		t.Fatalf("Missing row 3 ID %s", {{.ShortName}}3.ID)
+		t.Fatalf("Missing row 3 ID {{ if .IsIntPK }}%d{{else}}%s{{end}}", {{.ShortName}}3.ID)
 	}
 
 	// Compare props

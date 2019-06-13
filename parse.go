@@ -56,6 +56,31 @@ type model struct {
 	Joins map[string]int
 }
 
+func (mod *model) IsIntPK() bool {
+	switch mod.GetPKKind() {
+	case reflect.Int, reflect.Int32, reflect.Int64:
+		return true
+	default:
+		return false
+	}
+}
+
+func (mod *model) GetPKField() *field {
+	for _, f := range mod.Fields {
+		if f.MWName == mod.PKName {
+			return f
+		}
+	}
+	return nil
+}
+
+func (mod *model) GetPKKind() reflect.Kind {
+	if pkField := mod.GetPKField(); pkField != nil {
+		return pkField.ReflectType.Kind()
+	}
+	return reflect.Invalid
+}
+
 type modelSyncMap struct {
 	modelMap map[string]*model
 	mux      sync.Mutex

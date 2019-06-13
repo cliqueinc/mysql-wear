@@ -107,7 +107,7 @@ func TestMigrationHandler(t *testing.T) {
 		t.Fatalf("%d migrations should left after rollbacks, actual migrations (%d)", 2, count)
 	}
 
-	err = db.reset()
+	err = db.Reset()
 	if err != nil {
 		t.Fatalf("fail reset migraitons")
 	}
