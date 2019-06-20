@@ -1,4 +1,4 @@
-package mwear_test
+package main
 
 import (
 	"fmt"
@@ -7,18 +7,17 @@ import (
 	mw "github.com/cliqueinc/mysql-wear"
 )
 
-// Example email struct used for generating sql, model, test
 type Email struct {
 	ID              string
 	EmailID         string
-	RejectionReason string `mw:nullable`
+	RejectionReason string `mw:"nullable"`
 	Sent            time.Time
 	Created         time.Time
 	Updated         time.Time
 }
 
-func ExampleGenerateModel() {
+func main() {
 	fmt.Println(mw.GenerateSchema(&Email{}))
-	fmt.Println(mw.GenerateModel(&Email{}, "email"))
-	fmt.Println(mw.GenerateModelTest(&Email{}, "email"))
+	fmt.Println(mw.GenerateModel(&Email{}, "e"))
+	fmt.Println(mw.GenerateModelTest(&Email{}, "e"))
 }

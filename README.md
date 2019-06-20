@@ -59,31 +59,40 @@ if err := tx.Commit(); err != nil {
 ## Using Code Generation To Get Started
 
 You can use the following example script to generate a simple service
-for use with PGC. You should put this code into a main.go and run it
-using `go run main.go`
+for use with `mw`. You should put this code into a main.go and run it
+using `go run main.go`:
+
+```bash
+mwcmd gen init Article a
+```
+
+This command tells mwcmd to generate file that produces sql migration, crud, and crud test files for a specified struct. `Article` - name of a struct, `a` - short name that will be used in code.
+Command produces following code:
 
 ```golang
 package main
 
 import (
-    "fmt"
-    "github.com/cliqueinc/mw"
+  "fmt"
+  mw "github.com/cliqueinc/mysql-wear"
 )
 
-type UserProfile struct {
-    FirstName string
-    LastName string
-    Tags []string
+type Article struct {
+  ID          string
+  Name        string
+  Description string
 }
 
 func main() {
-	fmt.Println(mw.CreateS(&UserProfile{}))
-	// The second param is "short name" for use in object methods
-	fmt.Println(mw.GenerateModel(&UserProfile{}, "uprof"))
-	fmt.Println(mw.GenerateModelTest(&UserProfile{}, "uprof"))
+  fmt.Println(mw.GenerateSchema(&Article{}))
+  fmt.Println(mw.GenerateModel(&Article{}, "a"))
+  fmt.Println(mw.GenerateModelTest(&Article{}, "a"))
 }
-
 ```
+
+- `mw.GenerateSchema` - prints sql code for creating a table for the specified model.
+- `mw.GenerateModel` - prints golang model crud file.
+- `mw.GenerateModelTest` - prints golang test for current model.
 
 Normally when you are ready to create a new data model, you can first
 design and create your struct, then pop it into an example file like this
@@ -228,7 +237,7 @@ db.MustSelect(&blogs, sqlq.Order("updated", sqlq.DESC), sqlq.All())
 
 ## Select specific columns
 
-In case one needs to fetch only custom columns (foe example table have a column html_content, which is too expensive to load each time), they can simply use `sqlq.Columns` query option:
+In case one needs to fetch only custom columns (for example table have a column html_content, which is too expensive to load each time), they can simply use `sqlq.Columns` query option:
 ```golang
 var users []User
 db.MustSelect(&users, sqlq.Columns("id", "name", "salary"), sqlq.Limit(2), sqlq.GreaterThan("salary", 500))
@@ -400,16 +409,16 @@ In order to use the schema migration capabilities, you need to follow next steps
 ### 1. Install mwcmd tool
 
 ```bash
-go install github.com/cliqueinc/cws-mono/mw.v2/mwcmd
+go install github.com/cliqueinc/mysql-wear/mwcmd
 ```
 So now you can operate migrations.
 
 ### 2. Init migration
-mwcmd inits postgres connection from default env vars, and migration path also taken from `POSTGRES_MIGRATION_PATH` variable.
+mwcmd inits postgres connection from default env vars, and migration path also taken from `DB_MIGRATION_PATH` variable.
 
 In order to init migration:
 ```bash
-mwcmd migration
+mwcmd new-migration
 ```
 
 This command creates 2 migration files (like `2017-09-19:15:08:52.sql` and `2017-09-19:15:08:52_down.sql`), up and rollback sql commands, the second one
@@ -421,7 +430,7 @@ import (
 	"github.com/cliqueinc/mw"
 )
 
-mw.RegisterMigrationPath(cfg.AppPath+"deployments/mono-files/pg-revisions")
+mw.RegisterMigrationPath(cfg.AppPath+"db/migrations")
 ```
 
 So the migration handler knows where to take migration from.
