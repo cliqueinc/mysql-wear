@@ -13,6 +13,8 @@ type DB struct {
 }
 
 // New initializes new mysql-wear client assuming that sql connection already has been configured.
+// Use this when you want to manually configure your mysql connection string
+// (not recommended)
 func New(db *sql.DB) *DB {
 	return &DB{db, Wrap(db)}
 }
@@ -21,3 +23,9 @@ func New(db *sql.DB) *DB {
 func (db *DB) Begin() (*sql.Tx, error) {
 	return db.DB.Begin()
 }
+
+// Init mysql and mwear
+func Init() {}
+
+// InitFromEnvVars Loads everything up from os.Env vars
+func InitFromEnvVars() {}

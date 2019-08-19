@@ -283,7 +283,7 @@ func main() {
 // Generate functions
 // ------------------------------------------------------------------------- //
 
-// This will be (probably) only used by our pgccmd to create this stub for doing
+// This will be (probably) only used by our mwcmd to create this stub for doing
 // other generation. There is not an easy way to dynamically generate things
 // from structs like in other languages
 func GenerateInit(structName, shortName string) string {

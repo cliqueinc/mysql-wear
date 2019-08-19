@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cliqueinc/pgc/util"
+	"github.com/cliqueinc/mysql-wear/util"
 )
 
 // See ops_test for some good test structs

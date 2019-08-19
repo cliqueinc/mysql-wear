@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/cliqueinc/mysql-wear/sqlq"
-	"github.com/cliqueinc/pgc/util"
+	"github.com/cliqueinc/mysql-wear/util" // Hopefully our only pgc dep
 )
 
 // Please see testing guidelines in the readme
@@ -169,7 +169,7 @@ func TestGet(t *testing.T) {
 		t.Fatalf("Get expected to return user (%s), actual: (%s)", f2.Name, f2Get.Name)
 	}
 	if f2Get.UserID != "" {
-		t.Fatalf("pgc fetched not only name column!")
+		t.Fatalf("mw fetched not only name column!")
 	}
 
 	f3Get := &fakeGet{}

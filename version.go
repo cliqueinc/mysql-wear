@@ -154,14 +154,14 @@ func NewLog(action, message string, version string) *MigrationLog {
 }
 
 /*
-Set up mw schema migration on a new pg database without mw_schema_migration
+Set up mw schema migration on a new mysql database without mw_schema_migration
 OR mw_migration_log tables. We'll fail if either exists.
 
 Passing execDefault=true will run the default schema 000-00-00:00:00:00.sql
 */
 func (db *DB) InitSchema(execDefault bool) error {
 	if mh == nil {
-		return errors.New("call mw.RegisterMigrationPath befoere performing any migration operation")
+		return errors.New("call mw.RegisterMigrationPath before performing any migration operation")
 	}
 
 	created, err := db.createTableIfNotExists(&SchemaMigration{})
@@ -213,7 +213,7 @@ func (db *DB) createTableIfNotExists(model interface{}) (bool, error) {
 // if execDefault param is set to true, default schema will be executed if exists.
 func (db *DB) UpdateSchema(execDefault bool) error {
 	if mh == nil {
-		return errors.New("call mw.RegisterMigrationPath befoere performing any migration operation")
+		return errors.New("call mw.RegisterMigrationPath before performing any migration operation")
 	}
 
 	var existing []SchemaMigration
@@ -374,7 +374,7 @@ func InitMigration(isDefault bool) error {
 // RollbackLatest rollbacks latest migration.
 func (db *DB) RollbackLatest() error {
 	if mh == nil {
-		return errors.New("call mw.RegisterMigrationPath befoere performing any migration operation")
+		return errors.New("call mw.RegisterMigrationPath before performing any migration operation")
 	}
 	latestVersion := &SchemaMigration{}
 	found, err := db.Get(latestVersion, sqlq.Order("version", sqlq.DESC))
@@ -410,7 +410,7 @@ func (db *DB) RollbackLatest() error {
 // Rollback rollbacks particular migration.
 func (db *DB) Rollback(version string) error {
 	if mh == nil {
-		return errors.New("call mw.RegisterMigrationPath befoere performing any migration operation")
+		return errors.New("call mw.RegisterMigrationPath before performing any migration operation")
 	}
 	if version == "default" {
 		version = DefaultVersion
@@ -452,7 +452,7 @@ func (db *DB) Reset() error {
 // rollback rollbacks particular migration.
 func (db *DB) rollback(version string, m migration) error {
 	if mh == nil {
-		return errors.New("call mw.RegisterMigrationPath befoere performing any migration operation")
+		return errors.New("call mw.RegisterMigrationPath before performing any migration operation")
 	}
 
 	if m.downSQL == "" {

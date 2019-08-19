@@ -161,7 +161,7 @@ func (a *Adapter) Update(structPtr interface{}) error {
 }
 
 // MustUpdateRows ensures rows are updated without errors, panics othervise. Returns number of affected rows.
-// In case when you really need to update all rows (e.g. migration script), you need to pass pgc.QueryAll() option.
+// In case when you really need to update all rows (e.g. migration script), you need to pass mw.QueryAll() option.
 // It is done to avoid unintentional update of all rows.
 func (a *Adapter) MustUpdateRows(structPtr interface{}, dataMap Map, opts ...sqlq.Option) int64 {
 	rowsNum, err := a.UpdateRows(structPtr, dataMap, opts...)
@@ -173,7 +173,7 @@ func (a *Adapter) MustUpdateRows(structPtr interface{}, dataMap Map, opts ...sql
 }
 
 // UpdateRows updates rows with specified map data by query, returns number of affected rows.
-// In case when you really need to update all rows (e.g. migration script), you need to pass pgc.QueryAll() option.
+// In case when you really need to update all rows (e.g. migration script), you need to pass mw.QueryAll() option.
 // It is done to avoid unintentional update of all rows.
 func (a *Adapter) UpdateRows(structPtr interface{}, dataMap Map, opts ...sqlq.Option) (int64, error) {
 	if len(dataMap) == 0 {
@@ -388,7 +388,7 @@ func (a *Adapter) Delete(structPtr interface{}) error {
 	rowModel := reflect.ValueOf(structPtr)
 	pkVal := mod.getPK(rowModel)
 	if pkVal == "" {
-		return fmt.Errorf("pgc cant delete from table (%s), ID/PK not set", mod.TableName)
+		return fmt.Errorf("mw cant delete from table (%s), ID/PK not set", mod.TableName)
 	}
 	deleteSQL := renderTemplate(mod, deleteTemplate+" WHERE `{{.PKName}}` = ?")
 	if debugEnabled {
@@ -404,7 +404,7 @@ func (a *Adapter) Delete(structPtr interface{}) error {
 }
 
 // MustDeleteRows ensures rows are deleted without errors, panics othervise. Returns number of affected rows.
-// In case when you really need to update all rows (e.g. migration script), you need to pass pgc.QueryAll() option.
+// In case when you really need to update all rows (e.g. migration script), you need to pass mw.QueryAll() option.
 // It is done to avoid unintentional update of all rows.
 func (a *Adapter) MustDeleteRows(structPtr interface{}, opts ...sqlq.Option) int64 {
 	num, err := a.DeleteRows(structPtr, opts...)
@@ -416,7 +416,7 @@ func (a *Adapter) MustDeleteRows(structPtr interface{}, opts ...sqlq.Option) int
 }
 
 // DeleteRows deletes rows by specified options. Returns number of affected rows.
-// In case when you really need to update all rows (e.g. migration script), you need to pass pgc.QueryAll() option.
+// In case when you really need to update all rows (e.g. migration script), you need to pass mw.QueryAll() option.
 // It is done to avoid unintentional update of all rows.
 func (a *Adapter) DeleteRows(structPtr interface{}, opts ...sqlq.Option) (int64, error) {
 	mod := parseModel(structPtr, true)
@@ -509,7 +509,7 @@ func processJoins(mod *model, joinConfigs []sqlq.JoinConfig) ([]*model, [][]*fie
 	for i := range joinConfigs {
 		joinMod := parseModel(joinConfigs[i].StructPtr, true)
 		if _, ok := mod.Joins[joinMod.ReflectType.Elem().Name()]; !ok && !joinMod.NoFields {
-			return nil, nil, fmt.Errorf("unknown join relation %s, fields to be joined should be marked with tag pgc:\"join\"", joinMod.ReflectType.String())
+			return nil, nil, fmt.Errorf("unknown join relation %s, fields to be joined should be marked with tag mw:\"join\"", joinMod.ReflectType.String())
 		}
 		joinConfigs[i].TableName = joinMod.TableName
 		if joinMod.NoFields {

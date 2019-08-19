@@ -111,7 +111,7 @@ func Like(field string, pattern string) Option {
 }
 
 // where adds where construction to query, supporting comparison operators.
-// See comparison operators in pgc const as a samples.
+// See comparison operators in mw const as a samples.
 func where(field string, cmp string, value interface{}) Option {
 	return func(q *Query) (string, int, error) {
 		if field == "" {
@@ -235,7 +235,7 @@ func Having(opts ...Option) Option {
 	}
 }
 
-// GroupBy adds group by construction to query. Example: pgc.GroupBy("user_id"), or pgc.GroupBy("user_id", "price")
+// GroupBy adds group by construction to query. Example: mw.GroupBy("user_id"), or mw.GroupBy("user_id", "price")
 func GroupBy(columns ...string) Option {
 	return func(q *Query) (string, int, error) {
 		if q.queryType != OpSelect {
@@ -281,7 +281,7 @@ func Offset(offset int) Option {
 }
 
 // Order adds order to query. If multiple orders specified, each will be added to query.
-// For example pgc.Order("id", pgcq.ASC), pgc.Order("updated", pgcq.DESC) will produce ORDER BY "id" ASC, "updated" DESC.
+// For example mw.Order("id", sqlq.ASC), mw.Order("updated", mwq.DESC) will produce ORDER BY "id" ASC, "updated" DESC.
 func Order(field string, orderBy string) Option {
 	return func(q *Query) (string, int, error) {
 		if q.queryType != OpSelect {
@@ -314,7 +314,7 @@ func Columns(columns ...string) Option {
 // Join adds join to query.
 /*
 	1. define joined struct
-	2. search for field with pgc:"join" tag
+	2. search for field with mw:"join" tag
 	3. compare struct type, if same, add field address to fields slice
 	4. when scan, check whether model row already exist, if yes, try to join rows
 	5. TODO: how to join rows with multiple join case?????????????????????
