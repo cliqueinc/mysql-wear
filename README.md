@@ -24,15 +24,18 @@ func main() {
     panic(err)
   }
 ```
+
 <b>Important!</b> Make sure db connection has an option `parseTime=true`, othervise time.Time struct will not be parsed correctly!
 
 Then, we can initialize mysql-wear wrapper for dealing with CRUD mysql operations:
+
 ```golang
 db := mw.New(mysqlDB)
 ```
 
-Also, instead of using whole *sql.DB instance, we can wrap single sql connection for using
+Also, instead of using whole \*sql.DB instance, we can wrap single sql connection for using
 mysql-wear helpers:
+
 ```golang
 tx, err := db.Begin()
 if err != nil {
@@ -98,7 +101,15 @@ Normally when you are ready to create a new data model, you can first
 design and create your struct, then pop it into an example file like this
 then build out the service or supporting code based on the generated code.
 
-* Note you will need to copy the struct into the example service file.
+- Note you will need to copy the struct into the example service file.
+
+## Developing Mysql-Wear
+
+### Running the Tests
+
+- Make sure mysql server is running
+- Adjust mysql connection settings in conn_test.go (this is temporary. Later we will use a .env file or env vars)
+- Use the Makefile to run the tests: `make test_all`
 
 ## Naming
 
@@ -132,16 +143,17 @@ if mw.IsUniqueViolationError(err) {
   - `mw:"-"` tells mw to skip this field from all sql operations.
 
   <strong>Gotchas:</strong>
-    - It is strongly encouraged for your models to have ONLY one of the following (to define the primary key):
-        - A `ID string` field OR
-        - A ```UserID string `mw:"pk"` ``` field where UserID can be whatever
-        - Having both or none will cause an error
-    - Custom time.Time fields are not supported. Your models must use time.Time directly.
-    - If you have custom times for json output see [this](http://choly.ca/post/go-json-marshalling/)
+
+  - It is strongly encouraged for your models to have ONLY one of the following (to define the primary key):
+    - A `ID string` field OR
+    - A `` UserID string `mw:"pk"` `` field where UserID can be whatever
+    - Having both or none will cause an error
+  - Custom time.Time fields are not supported. Your models must use time.Time directly.
+  - If you have custom times for json output see [this](http://choly.ca/post/go-json-marshalling/)
 
 - `sql_name`
-By default mw converts struct name (usually CamelCased) into underscored name. But sometimes we have such field names like
-`RedirectURL`, which may be converted in not a proper way, so all one needs to do is to add `sql_name` tag:
+  By default mw converts struct name (usually CamelCased) into underscored name. But sometimes we have such field names like
+  `RedirectURL`, which may be converted in not a proper way, so all one needs to do is to add `sql_name` tag:
 
   ```golang
   type blog struct {
@@ -167,7 +179,9 @@ u2 := &User{
 
 db.MustInsert(u1, u2)
 ```
+
 In case struct's primary key is int, its possible to get inserted id from sql result:
+
 ```golang
 type blog struct {
   ID int64
@@ -187,6 +201,7 @@ b.ID = id
 The idea is that we usually use the same patterns for building raw queries, such as limit, ordering, IN construction, where, etc. The purpose of method is to simplify quering, which can make using mw more fun.
 
 For example, in order to query by IN with limit 5 ordering by `created` column, one'd need to type:
+
 ```golang
 err := db.Select(
   &users,
@@ -197,6 +212,7 @@ err := db.Select(
 ```
 
 Or in case of more complicated conditions:
+
 ```golang
 db.MustSelect(
   &blogs,
@@ -213,6 +229,7 @@ db.MustSelect(
 The method is implemented using functional options pattern, which is super lightweight and is easy extendable for adding common constructions.
 
 Example:
+
 ```golang
 opts := []sqlq.Option{
   sqlq.Order("id", sqlq.ASC),
@@ -228,6 +245,7 @@ db.MustSelect(&users, opts...)
 ```
 
 ### <strong>Default limit</strong>
+
 If no limit specified for select, the default limit will be added (`1000`). If you <strong>really need</strong> to fetch all rows, you need to
 add sqlq.All() option:
 
@@ -238,6 +256,7 @@ db.MustSelect(&blogs, sqlq.Order("updated", sqlq.DESC), sqlq.All())
 ## Select specific columns
 
 In case one needs to fetch only custom columns (for example table have a column html_content, which is too expensive to load each time), they can simply use `sqlq.Columns` query option:
+
 ```golang
 var users []User
 db.MustSelect(&users, sqlq.Columns("id", "name", "salary"), sqlq.Limit(2), sqlq.GreaterThan("salary", 500))
@@ -302,6 +321,7 @@ if err != nil {
 - `sqlq.Equal("company_id", "555")`, `sqlq.NotEqual("is_active", false)` - optional query options for updating rows.
 
 The sample above will produce something like:
+
 ```sql
 UPDATE `user` SET `scores`=50, `is_active`=fase WHERE `company_id`="555" AND `is_active` != false;
 ```
@@ -343,9 +363,10 @@ if err != nil {
 ```
 
 - `&user{}`, first argument, is a struct that represents table, mw greps metadata from it.
-- `sqlq.Equal("company_id", "555")`,  `sqlq.NotEqual("is_active", false)` - optional query options for deleting rows.
+- `sqlq.Equal("company_id", "555")`, `sqlq.NotEqual("is_active", false)` - optional query options for deleting rows.
 
 The sample above will produce something like:
+
 ```sql
 DELETE FROM "user" WHERE "company_id"="555";
 ```
@@ -401,7 +422,6 @@ put the struct and methods in a model_user.go file and the test in a model_user_
 
 Delete your main.go file now and start building out your model/service!
 
-
 ## Versioning (schema migrations)
 
 In order to use the schema migration capabilities, you need to follow next steps:
@@ -411,12 +431,15 @@ In order to use the schema migration capabilities, you need to follow next steps
 ```bash
 go install github.com/cliqueinc/mysql-wear/mwcmd
 ```
+
 So now you can operate migrations.
 
 ### 2. Init migration
-mwcmd inits postgres connection from default env vars, and migration path also taken from `DB_MIGRATION_PATH` variable.
+
+mwcmd inits mysql connection from default env vars, and migration path also taken from `DB_MIGRATION_PATH` variable.
 
 In order to init migration:
+
 ```bash
 mwcmd new-migration
 ```
@@ -425,6 +448,7 @@ This command creates 2 migration files (like `2017-09-19:15:08:52.sql` and `2017
 is optional and can be safely deleted.
 
 If you are running migration by your app, you need to register the migration path before mw init:
+
 ```golang
 import (
 	"github.com/cliqueinc/mw"
@@ -435,8 +459,9 @@ mw.RegisterMigrationPath(cfg.AppPath+"db/migrations")
 
 So the migration handler knows where to take migration from.
 Now mw nows where to take migrations from, and you are able to call mw.InitSchema(), or db.UpdateSchema():
+
 ```
-if err := mw.InitSchema(); err != nil {
+if err := mw.InitSchema(false); err != nil {
   panic(fmt.Sprintf("Fail init schema: %v\n", err))
 }
 ```
@@ -444,7 +469,9 @@ if err := mw.InitSchema(); err != nil {
 ### <strong>mw commands</strong>
 
 In order to deal with mysql migration, you can install `mwcmd` tool:
+
 - go to `mwcmd` directory, then execute:
+
 ```bash
 go install
 ```
@@ -452,27 +479,32 @@ go install
 #### Before using
 
 `mwcmd` tool initializes db connection from ENV vars:
-  - DB_NAME - name of the database, required.
-  - DB_MIGRATION_PATH - path to migratons directory, required. Example: `./db/migrations`
-  - DB_USER - db user name, root by default.
-  - DB_PASSWORD - db password.
-  - DB_PORT - db port, 3306 by default
-  - DB_HOST - db host, 127.0.0.1 by default
-  - DB_USE_TLS - whether to use tls, false by default
+
+- DB_NAME - name of the database, required.
+- DB_MIGRATION_PATH - path to migrations directory, required. Example: `./db/migrations`
+- DB_USER - db user name, root by default.
+- DB_PASSWORD - db password.
+- DB_PORT - db port, 3306 by default
+- DB_HOST - db host, 127.0.0.1 by default
+- DB_USE_TLS - whether to use tls, false by default
 
 Example usage:
+
 ```bash
 DB_PASSWORD=root DB_PORT=3406 DB_MIGRATION_PATH=./migrations DB_NAME=mw_tmp mwcmd status
 ```
 
 - #### mwcmd init
+
   Creates required mw schema tables.
   `mwcmd init` also ensures all executed migrations exist in corresponding files.
 
 - #### mwcmd up
+
   Checks is there any migration that needs to be executed, and executes them in ascending order.
 
 - #### mwcmd new-migration [default]
+
   Generates new migration file, see `Migration file internals` for more info. If the next argument is `default`, the migration 0000-00-00:00:00:00.sql
   will be generated. It won't be added to migration log and won't be executed unless you explicitly call `exec default`. It is made in order to have
   an ability to keep existing schema, which needs to be executed only once, and most likely, only in local environment.
@@ -503,7 +535,6 @@ DB_PASSWORD=root DB_PORT=3406 DB_MIGRATION_PATH=./migrations DB_NAME=mw_tmp mwcm
 
   Delete your main.go file now and start building out your model/service!
 
-
 ## Testing Notes
 
 - You can simply run `go test -v inside this directory to run all the tests.
@@ -521,6 +552,7 @@ package is required. I would start with the following resources below, then try 
 a few tests around the parsing and Select code.
 
 Resources (in order of importance)
+
 - [Laws of Reflection by Rob Pike](https://blog.golang.org/laws-of-reflection)
-    - Links to other posts
+  - Links to other posts
 - Go book chapter ?

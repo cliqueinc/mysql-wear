@@ -7,15 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 )
 
 const (
-	TestPort     = 3406
+	TestPort     = 3306
 	TestUser     = "root"
-	TestPassword = "root"
+	TestPassword = "testpass1234"
 )
 
 var db *DB
@@ -26,17 +25,25 @@ Configure the running of the main to create and config a temp/test db
 func TestMain(m *testing.M) {
 	flag.Parse()
 	// envDBName := os.Getenv("MYSQL_DB")
-	envDBName := "mw_tmp"
+	envDBName := "mw_tmp" // See **Note** below. CreateDB will set this
 	// debugEnabled = true
 
 	var shouldDropDB bool
-	if !strings.HasPrefix(envDBName, "mw_tmp") {
+	// **Note** This logic pre-dates the current version of mysql-wear!
+	// What this is doing is making sure your configured dbname (which is SUPPOSED
+	// to come from an env variable) isn't something real like myworkproject.
+	// SO if it DOESNT start with mw_tmp, we override and give you a tmp DB then drop it.
+	// For now just going to comment that check since we always want to use a tmp db
+	//
+	// if !strings.HasPrefix(envDBName, "mw_tmp") {
+	if true {
 		// Create and new a tmp db
 		envDBName = CreateDB("mw_tmp")
 		shouldDropDB = true
 
 	}
 
+	// TODO combine with core way of connecting to mysql so we don't forget to change this in two places
 	dsn := fmt.Sprintf(
 		"%s:%s@tcp(127.0.0.1:%d)/%s?tls=false&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''",
 		TestUser,
@@ -86,6 +93,7 @@ func CreateDB(namePrefix string) string {
 func DropDB(dbName string) {
 	out, err := exec.Command(
 		"mysqladmin",
+		"-f", // Need the -f to force drop db otherwise will prompt y/n
 		"-h127.0.0.1",
 		"-P"+strconv.Itoa(TestPort),
 		"-u"+TestUser,
