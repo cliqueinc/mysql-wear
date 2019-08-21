@@ -39,7 +39,7 @@ func (db *DB) Begin() (*sql.Tx, error) {
 // Init mysql, mw, load and update any schema
 func InitWithSchema(cv ConnectVals) (*DB, error) {
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?tls=false&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''",
+		"%s:%s@tcp(%s:%d)/%s?tls=false&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''&multiStatements=true",
 		cv.UserName,
 		cv.Password,
 		cv.Host,
