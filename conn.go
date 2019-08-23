@@ -38,8 +38,9 @@ func (db *DB) Begin() (*sql.Tx, error) {
 
 // Init mysql, mw, load and update any schema
 func InitWithSchema(cv ConnectVals) (*DB, error) {
+	// TODO we probably don't want to use multi statements after schema init
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/%s?tls=false&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''&multiStatements=true",
+		"%s:%s@tcp(%s:%d)/%s?multiStatements=true&tls=false&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''",
 		cv.UserName,
 		cv.Password,
 		cv.Host,
@@ -51,7 +52,7 @@ func InitWithSchema(cv ConnectVals) (*DB, error) {
 		return nil, err
 	}
 
-	err = RegisterMigrationPath("../mysql-schema")
+	err = RegisterMigrationPath(cv.MigrationPath)
 	if err != nil {
 		return nil, err
 	}

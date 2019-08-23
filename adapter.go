@@ -60,7 +60,7 @@ func (db *DB) CreateTable(structPtr interface{}) error {
 	return err
 }
 
-// Adapter handles basic operations with postgres.
+// Adapter handles basic operations with mysql.
 type Adapter struct {
 	con Connection
 }
