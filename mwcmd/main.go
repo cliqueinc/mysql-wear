@@ -90,18 +90,24 @@ func main() {
 		err = getDB().PrintVersionStatus()
 	case "help":
 		if db != nil {
-			db.DB.Close()
+			if err := db.DB.Close(); err != nil {
+				fmt.Printf("Failed to close DB, error: %#v\n", err)
+			}
 		}
 		help()
 	default:
 		if db != nil {
-			db.DB.Close()
+			if err := db.DB.Close(); err != nil {
+				fmt.Printf("Failed to close DB, error: %#v\n", err)
+			}
 		}
 		help()
 	}
 
 	if db != nil {
-		db.DB.Close()
+		if err := db.DB.Close(); err != nil {
+			fmt.Printf("Failed to close DB, error: %#v\n", err)
+		}
 	}
 	if err != nil {
 		fmt.Printf("Failed: %v\n", err)
@@ -130,7 +136,9 @@ func getDB() *mw.DB {
 
 	if err := mw.RegisterMigrationPath(cfg.DBMigrationPath); err != nil {
 		fmt.Printf("fail register migration path: %v\n", err)
-		dbCon.DB.Close()
+		if err := db.DB.Close(); err != nil {
+			fmt.Printf("Failed to close DB, error: %#v\n", err)
+		}
 		os.Exit(-1)
 	}
 
@@ -169,7 +177,7 @@ func getMySQLConfigFromEnv() (config, error) {
 		port = 3306
 	}
 	host := "127.0.0.1"
-	if hostEnv := os.Getenv(DB_HOST); host != "" {
+	if hostEnv := os.Getenv(DB_HOST); hostEnv != "" {
 		host = hostEnv
 	}
 

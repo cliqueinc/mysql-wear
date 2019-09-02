@@ -45,10 +45,16 @@ func (scanner *jsonScanner) Scan(val interface{}) error {
 	}
 	switch v := val.(type) {
 	case []byte:
-		json.Unmarshal(v, &scanner.item)
+		err := json.Unmarshal(v, &scanner.item)
+		if err != nil {
+			return fmt.Errorf("failed to JSON unmarshal: %#v", err)
+		}
 		return nil
 	case string:
-		json.Unmarshal([]byte(v), &scanner.item)
+		err := json.Unmarshal([]byte(v), &scanner.item)
+		if err != nil {
+			return fmt.Errorf("failed to JSON unmarshal: %#v", err)
+		}
 		return nil
 	default:
 		return fmt.Errorf("unsupported type: %T", v)
