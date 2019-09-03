@@ -81,7 +81,7 @@ import (
 )
 
 type Article struct {
-  ID          string
+  ID          string // IMPORTANT: this field required or field with tag `mw:"pk"`.
   Name        string
   Description string
 }
@@ -102,14 +102,6 @@ design and create your struct, then pop it into an example file like this
 then build out the service or supporting code based on the generated code.
 
 - Note you will need to copy the struct into the example service file.
-
-## Developing Mysql-Wear
-
-### Running the Tests
-
-- Make sure mysql server is running
-- Adjust mysql connection settings in conn_test.go (this is temporary. Later we will use a .env file or env vars)
-- Use the Makefile to run the tests: `make test_all`
 
 ## Naming
 
@@ -434,7 +426,31 @@ go install github.com/cliqueinc/mysql-wear/mwcmd
 
 So now you can operate migrations.
 
-### 2. Init migration
+#### Before using
+
+`mwcmd` tool initializes db connection from ENV vars:
+
+- DB_NAME - name of the database, required.
+- DB_MIGRATION_PATH - path to migrations directory, required. Example: `./db/migrations`
+- DB_USER - db user name, root by default.
+- DB_PASSWORD - db password.
+- DB_PORT - db port, 3306 by default
+- DB_HOST - db host, 127.0.0.1 by default
+- DB_USE_TLS - whether to use tls, false by default
+
+IMPORTANT: don't forget to run next command (to initialize migrations tables in db):
+
+```bash
+mwcmd init
+```
+
+Example usage:
+
+```bash
+DB_PASSWORD=root DB_PORT=3406 DB_MIGRATION_PATH=./migrations DB_NAME=mw_tmp mwcmd status
+```
+
+### 2. Init new migration
 
 mwcmd inits mysql connection from default env vars, and migration path also taken from `DB_MIGRATION_PATH` variable.
 
@@ -460,7 +476,7 @@ mw.RegisterMigrationPath(cfg.AppPath+"db/migrations")
 So the migration handler knows where to take migration from.
 Now mw nows where to take migrations from, and you are able to call mw.InitSchema(), or db.UpdateSchema():
 
-```
+```golang
 if err := mw.InitSchema(false); err != nil {
   panic(fmt.Sprintf("Fail init schema: %v\n", err))
 }
@@ -474,24 +490,6 @@ In order to deal with mysql migration, you can install `mwcmd` tool:
 
 ```bash
 go install
-```
-
-#### Before using
-
-`mwcmd` tool initializes db connection from ENV vars:
-
-- DB_NAME - name of the database, required.
-- DB_MIGRATION_PATH - path to migrations directory, required. Example: `./db/migrations`
-- DB_USER - db user name, root by default.
-- DB_PASSWORD - db password.
-- DB_PORT - db port, 3306 by default
-- DB_HOST - db host, 127.0.0.1 by default
-- DB_USE_TLS - whether to use tls, false by default
-
-Example usage:
-
-```bash
-DB_PASSWORD=root DB_PORT=3406 DB_MIGRATION_PATH=./migrations DB_NAME=mw_tmp mwcmd status
 ```
 
 - #### mwcmd init
@@ -534,25 +532,3 @@ DB_PASSWORD=root DB_PORT=3406 DB_MIGRATION_PATH=./migrations DB_NAME=mw_tmp mwcm
   This will print a create table statement, sample struct methods, and a simple test stub. The create table should go in a new up.sql in a new schema migration folder (see instructions below). From the user example, you would put the struct and methods in a model_user.go file and the test in a model_user_test.go file.
 
   Delete your main.go file now and start building out your model/service!
-
-## Testing Notes
-
-- You can simply run `go test -v inside this directory to run all the tests.
-- See conn_test.go for the main test function and details
-- Due to the way we configure the tmp/test db, running an individual test should be accomplished
-  via `go test -v -run=TestName`
-- Given the heavy use of structs, please have each test define its
-  own structs inside the test function. Otherwise maintenance will become
-  a real nightmare.
-
-## Understanding Reflection
-
-In order to improve this library a fairly in depth knowledge of golang's reflect
-package is required. I would start with the following resources below, then try adding
-a few tests around the parsing and Select code.
-
-Resources (in order of importance)
-
-- [Laws of Reflection by Rob Pike](https://blog.golang.org/laws-of-reflection)
-  - Links to other posts
-- Go book chapter ?
