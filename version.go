@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"time"
@@ -30,7 +31,8 @@ const (
 
 var (
 	// mh keeps all migrration data and handles migration operations.
-	mh *MigrationHandler
+	mh                   *MigrationHandler
+	regExpNotEmptyString = regexp.MustCompile(`\w+`)
 )
 
 // RegisterMigrationPath registers migration path for performing migration operations.
@@ -243,11 +245,19 @@ func (db *DB) UpdateSchema(execDefault bool) error {
 		}
 
 		migrationFunc := func(con Connection) error {
-			_, err := con.Exec(m.upSQL)
-			if err != nil {
-				return err
+			// Split migration file content into separate queries.
+			queries := strings.Split(m.upSQL, ";")
+			// Apply query by query in a loop.
+			for _, query := range queries {
+				if !regExpNotEmptyString.MatchString(query) {
+					continue
+				}
+				_, err := con.Exec(query)
+				if err != nil {
+					return err
+				}
 			}
-			_, err = Wrap(con).Insert(&SchemaMigration{Version: version, Created: time.Now().UTC()})
+			_, err := Wrap(con).Insert(&SchemaMigration{Version: version, Created: time.Now().UTC()})
 			if err != nil {
 				return err
 			}
@@ -470,9 +480,17 @@ func (db *DB) rollback(version string, m migration) error {
 	}
 
 	migrationFunc := func(con Connection) error {
-		_, err := con.Exec(m.downSQL)
-		if err != nil {
-			return err
+		// Split migration file content into separate queries.
+		queries := strings.Split(m.downSQL, ";")
+		// Apply query by query in a loop.
+		for _, query := range queries {
+			if !regExpNotEmptyString.MatchString(query) {
+				continue
+			}
+			_, err := con.Exec(query)
+			if err != nil {
+				return err
+			}
 		}
 		if _, err := Wrap(con).DeleteRows(&SchemaMigration{}, sqlq.Equal("version", version)); err != nil {
 			return err
