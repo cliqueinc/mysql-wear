@@ -351,10 +351,14 @@ func InitMigration(isDefault bool) error {
 	}
 	sqlTmpl := `-- paste here migration sql code`
 	if _, err := f.WriteString(sqlTmpl); err != nil {
-		f.Close()
+		if err := f.Close(); err != nil {
+			return fmt.Errorf("failed to close sql file: %v", err)
+		}
 		return fmt.Errorf("fail init sql file: %v", err)
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("failed to close sql file: %v", err)
+	}
 
 	f, err = os.Create(getMigrationPath() + newVersion + "_down.sql")
 	if err != nil {
@@ -362,11 +366,17 @@ func InitMigration(isDefault bool) error {
 	}
 	sqlTmpl = `-- paste here migration rollback sql code`
 	if _, err := f.WriteString(sqlTmpl); err != nil {
-		f.Close()
-		os.Remove(getMigrationPath() + newVersion + ".sql")
+		if err := f.Close(); err != nil {
+			return fmt.Errorf("failed to close sql file: %v", err)
+		}
+		if err := os.Remove(getMigrationPath() + newVersion + ".sql"); err != nil {
+			return fmt.Errorf("failed to remove sql file: %v", err)
+		}
 		return fmt.Errorf("fail init sql file: %v", err)
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		return fmt.Errorf("failed to close sql file: %v", err)
+	}
 
 	return nil
 }
