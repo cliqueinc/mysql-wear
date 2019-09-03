@@ -387,6 +387,40 @@ count := db.MustCount(&user{}, sqlq.LessThan("score", 1000))
 fmt.Printf("found %d rows\n", count)
 ```
 
+## Join
+
+To get joined data, use next approach:
+
+```golang
+// add field with tag `mw:"join"`
+type User struct {
+  ...
+  Emails []UserEmail `mw:"join"`
+}
+
+user := make([]User, 0)
+err := db.Select(
+  &user,
+  sqlq.Join(&UserEmail{}, "user.id = user_email.user_id", "email"),
+  sqlq.Equal("id", "2"),
+)
+```
+
+Or you may use approach with 2 queries:
+
+```golang
+// query 1: find user
+user := &User{ID: 2}
+found := db.MustGet(user)
+
+// query 2: find user's emails
+emails := make([]Email, 0)
+db.MustSelect(&emails, sqlq.Equal("user_id", user.ID))
+
+// assign emails
+user.Emails = emails
+```
+
 ## Generate sum Codez!
 
 The easiest way to understand how to use the code generator is to view examples/generate_print.go
