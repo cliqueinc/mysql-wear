@@ -464,8 +464,10 @@ func (fi *field) setMWType(mod *model, tagVal string) {
 		switch fi.ReflectType.Kind() {
 		case reflect.Int, reflect.Int32, reflect.Int64:
 			fi.MWType = mw_pk_int
+			return
 		case reflect.String:
 			fi.MWType = mw_pk_string
+			return
 		default:
 			panic(fmt.Sprintf("unsupported type (%s) for primary key", fi.ReflectType.Kind()))
 		}
