@@ -29,7 +29,7 @@ func TestMain(m *testing.M) {
 
 	// TODO combine with core way of connecting to mysql so we don't forget to change this in two places
 	dsn := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/?tls=false&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''",
+		"%s:%s@tcp(%s:%d)/?multiStatements=true&tls=false&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''",
 		TestUser,
 		TestPassword,
 		TestHost,

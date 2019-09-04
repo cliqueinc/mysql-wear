@@ -20,17 +20,23 @@ func TestMigrationHandler(t *testing.T) {
 		GenerateSchema(&User{}),
 		`DROP TABLE user;`,
 	)
+	doubleInsertAllTheWay := `insert into user (id, name, created) VALUES 
+	('111','user1','2006-01-02:15:04:05'), 
+	('222','user2','2006-01-02:15:04:05');
+	
+	insert into user (id, name, created) VALUES 
+		('333','user3','2006-01-02:15:04:05'), 
+		('444','user4','2006-01-02:15:04:05');`
+
 	migrationHandler.RegisterMigration(
 		"2017-09-16:15:08:52",
-		`insert into user (id, name, created) VALUES 
-		('111','user1','2006-01-02:15:04:05'), 
-		('222','user2','2006-01-02:15:04:05');`,
-		`delete from user where name IN ('user1', 'user2')`,
+		doubleInsertAllTheWay,
+		`delete from user where name IN ('user1', 'user2', 'user3', 'user4')`,
 	)
 	migrationHandler.RegisterMigration(
 		DefaultVersion,
-		"insert into `user` (id, name, created) VALUES ('333','user3','2006-01-02:15:04:05');",
-		"delete from `user` where name = 'user3'",
+		"insert into `user` (id, name, created) VALUES ('555','user5','2006-01-02:15:04:05');",
+		"delete from `user` where name = 'user5'",
 	)
 	mh = migrationHandler
 	if err := db.InitSchema(false); err != nil {
@@ -54,8 +60,8 @@ func TestMigrationHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if count != 2 {
-		t.Fatalf("expected %d users in table, actual (%d)", 2, count)
+	if count != 4 {
+		t.Fatalf("expected %d users in table, actual (%d)", 4, count)
 	}
 
 	if err := db.Rollback("2017-09-16:15:08:52"); err != nil {
@@ -69,6 +75,7 @@ func TestMigrationHandler(t *testing.T) {
 		t.Fatalf("2nd migration didn't roll back")
 	}
 
+	// Execute second migration again
 	if err := db.ExecuteMigration("2017-09-16:15:08:52"); err != nil {
 		t.Fatalf("fail execute 2nd migration: %v", err)
 	}
@@ -76,10 +83,10 @@ func TestMigrationHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if count != 2 {
-		t.Fatalf("expected %d users in table, actual (%d)", 2, count)
+	if count != 4 {
+		t.Fatalf("expected %d users in table, actual (%d)", 4, count)
 	}
-
+	// Delete users table via first migration
 	if err := db.Rollback("2017-09-15:15:08:52"); err != nil {
 		t.Fatalf("fail rollback 1st migration: %v", err)
 	}
@@ -108,6 +115,47 @@ func TestMigrationHandler(t *testing.T) {
 	}
 
 	err = db.Reset()
+	if err != nil {
+		t.Fatalf("fail reset migraitons")
+	}
+	if count := db.MustCount(&SchemaMigration{}); count != 0 {
+		t.Fatalf("not all migrations were reseted")
+	}
+
+}
+
+func TestBadMigration(t *testing.T) {
+	type User struct {
+		ID      string
+		Name    string
+		Created time.Time
+	}
+
+	mh = &MigrationHandler{}
+
+	badDoubleInsertAllTheWay := `insert into user (id, name, created) VALUES
+		('111','user1','2006-01-02:15:04:05'),
+		('222','user2','2006-01-02:15:04:05')
+
+		insert into user (id, name, created) VALES
+			('333','user3','2006-01-02:15:04:05'),
+			('444','user4','2006-01-02:15:04:05');`
+	mh.RegisterMigration(
+		"2019-09-03:15:08:53",
+		badDoubleInsertAllTheWay,
+		`delete from user where name IN ('user1', 'user2', 'user3', 'user4')`,
+	)
+
+	if err := db.InitSchema(false); err != nil {
+		t.Fatalf("fail init schema: %v", err)
+	}
+
+	// Execute bad statement directly
+	if err := db.ExecuteMigration("2019-09-03:15:08:53"); err == nil {
+		t.Error("ExecuteMigration should have failed on bad syntax, was nil")
+	}
+
+	err := db.Reset()
 	if err != nil {
 		t.Fatalf("fail reset migraitons")
 	}
