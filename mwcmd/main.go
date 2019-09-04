@@ -215,7 +215,7 @@ func openDB(cfg config) (*mw.DB, error) {
 
 	conPath := fmt.Sprintf("tcp(%s:%d)", cfg.Host, cfg.Port)
 	dsn := fmt.Sprintf(
-		"%s:%s@%s/%s?tls=%s&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''",
+		"%s:%s@%s/%s?tls=%s&parseTime=true&charset=utf8mb4&collation=utf8mb4_unicode_ci&sql_mode=''&multiStatements=true",
 		cfg.User,
 		cfg.Password,
 		conPath,
