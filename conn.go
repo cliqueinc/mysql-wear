@@ -15,11 +15,12 @@ type DB struct {
 }
 
 type ConnectVals struct {
-	Host     string
-	Port     int
-	DBName   string
-	UserName string
-	Password string
+	Host       string
+	UnixSocket string // Supersedes tcp connection
+	Port       int
+	DBName     string
+	UserName   string
+	Password   string
 
 	// Required for InitWithSchema
 	MigrationPath string
@@ -35,14 +36,23 @@ func (cv ConnectVals) TLS() string {
 
 // TODO test me
 func (cv ConnectVals) ConnectString() string {
-
-	connStr := fmt.Sprintf(
-		"%s:%s@tcp(%s:%d)/",
-		cv.UserName,
-		cv.Password,
-		cv.Host,
-		cv.Port,
-	)
+	var connStr string
+	if cv.UnixSocket != "" { // Unix Socket takes precedence over tcp/port
+		connStr = fmt.Sprintf(
+			"%s:%s@unix(%s)/",
+			cv.UserName,
+			cv.Password,
+			cv.UnixSocket,
+		)
+	} else {
+		connStr = fmt.Sprintf(
+			"%s:%s@tcp(%s:%d)/",
+			cv.UserName,
+			cv.Password,
+			cv.Host,
+			cv.Port,
+		)
+	}
 	if cv.DBName != "" { // Only add the DB name if set
 		connStr += cv.DBName
 	}
