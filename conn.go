@@ -14,6 +14,8 @@ type DB struct {
 	*Adapter
 }
 
+// ConnectVals hold connection info for mysql
+// UnixSocket should be a full path like for CloudSQL: /cloudsql/PROJECT_ID:REGION_ID:INSTANCE_ID
 type ConnectVals struct {
 	Host       string
 	UnixSocket string // Supersedes tcp connection
