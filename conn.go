@@ -77,6 +77,18 @@ func (db *DB) Begin() (*sql.Tx, error) {
 	return db.DB.Begin()
 }
 
+// InitOnly simply creates the connection to mysql and doesn't
+// mess with schema updates at all
+func InitOnly(cv ConnectVals) (*DB, error) {
+	// TODO we probably don't want to use multi statements after schema init
+	dsn := cv.ConnectString()
+	mysqlDB, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	return New(mysqlDB), nil
+}
+
 // Init mysql, mw, load and update any schema
 func InitWithSchema(cv ConnectVals) (*DB, error) {
 	// TODO we probably don't want to use multi statements after schema init
