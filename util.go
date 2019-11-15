@@ -38,9 +38,11 @@ func SetTableName(structPtr interface{}, name string) {
 	mod := parseModel(structPtr, false)
 
 	mod.TableName = name
+	for _, f := range mod.Fields {
+		f.TableName = name
+	}
 
-	modType := reflect.TypeOf(structPtr)
-	typeName := modType.String()
+	typeName := reflect.TypeOf(structPtr).String()
 	cachedModelMap.Set(typeName, mod)
 }
 
