@@ -1,5 +1,5 @@
 # MySQL Wear Specification
-
+[![Documentation](https://godoc.org/github.com/cliqueinc/mysql-wear?status.svg)](https://godoc.org/github.com/cliqueinc/mysql-wear)
 ## Quickstart
 
 Before you start using mysql-wear package, you need to init mysql connection,
