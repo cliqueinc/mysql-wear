@@ -4,3 +4,5 @@ require (
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/pborman/uuid v1.2.0
 )
+
+go 1.13
