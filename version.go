@@ -259,7 +259,7 @@ func (db *DB) UpdateSchema(execDefault bool) error {
 			}
 			_, err := Wrap(con).Insert(&SchemaMigration{Version: version, Created: time.Now().UTC()})
 			if err != nil {
-				return fmt.Errorf("insert to mw_sqchema_migration: %s", err)
+				return fmt.Errorf("insert to mw_schema_migration: %s", err)
 			}
 
 			return nil
