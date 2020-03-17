@@ -3,6 +3,11 @@ package mwear
 import (
 	"database/sql"
 	"fmt"
+	"time"
+)
+
+const (
+	connMaxLifetime = 60 * time.Second
 )
 
 // TODO is this being used? (grep)
@@ -86,6 +91,7 @@ func InitOnly(cv ConnectVals) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	mysqlDB.SetConnMaxLifetime(connMaxLifetime)
 	return New(mysqlDB), nil
 }
 
@@ -97,6 +103,7 @@ func InitWithSchema(cv ConnectVals) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	mysqlDB.SetConnMaxLifetime(connMaxLifetime)
 
 	err = RegisterMigrationPath(cv.MigrationPath)
 	if err != nil {
