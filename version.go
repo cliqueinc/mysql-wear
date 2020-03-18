@@ -254,30 +254,33 @@ func (db *DB) UpdateSchema(execDefault bool) error {
 				}
 				_, err := con.Exec(query)
 				if err != nil {
-					return err
+					return fmt.Errorf("exec query: (%s)\nerr: (%s)", query, err)
 				}
 			}
 			_, err := Wrap(con).Insert(&SchemaMigration{Version: version, Created: time.Now().UTC()})
 			if err != nil {
-				return err
+				return fmt.Errorf("insert to mw_schema_migration: %s", err)
 			}
 
 			return nil
 		}
 
 		if err := db.execInTx(version, migrationFunc); err != nil {
+			errLog := NewLog(actionUpdate, fmt.Sprintf("while applying migration: %s", err), version)
+			errLog.Success = false
+			db.MustInsert(errLog)
+
+			db.Rollback(version)
+
 			return fmt.Errorf("fail update to version (%s): %v", version, err)
 		}
+
+		succLog := NewLog(actionUpdate, "success", version)
+		db.MustInsert(succLog)
 
 		installedMigrations = append(installedMigrations, version)
 	}
 
-	if len(installedMigrations) == 0 {
-		// fmt.Printf("Schema is up to date\n")
-		return nil
-	}
-
-	// fmt.Printf("*** Migration(s) (%s) have been installed ***\n", strings.Join(installedMigrations, ", "))
 	return nil
 }
 
@@ -342,6 +345,12 @@ func (db *DB) ExecuteMigration(version string) error {
 	}
 
 	if err := db.execInTx(version, migrationFunc); err != nil {
+		errLog := NewLog(actionUpdate, fmt.Sprintf("while applying migration: %s", err), version)
+		errLog.Success = false
+		db.MustInsert(errLog)
+
+		db.Rollback(version)
+
 		return fmt.Errorf("fail execute migration (%s): %v", version, err)
 	}
 
@@ -500,6 +509,10 @@ func (db *DB) rollback(version string, m migration) error {
 	}
 
 	if err := db.execInTx(version, migrationFunc); err != nil {
+		errLog := NewLog(actionUpdate, fmt.Sprintf("while executing rollback: %s", err), version)
+		errLog.Success = false
+		db.MustInsert(errLog)
+
 		return fmt.Errorf("fail rollback version (%s): %v", version, err)
 	}
 

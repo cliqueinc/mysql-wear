@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/cliqueinc/mysql-wear/sqlq"
 	"github.com/go-sql-driver/mysql"
 )
 
@@ -124,7 +125,11 @@ func TestMigrationHandler(t *testing.T) {
 
 }
 
-func TestBadMigration(t *testing.T) {
+type TestMigration struct {
+	ID int
+}
+
+func TestBadMigrations(t *testing.T) {
 	type User struct {
 		ID      string
 		Name    string
@@ -146,6 +151,14 @@ func TestBadMigration(t *testing.T) {
 		`delete from user where name IN ('user1', 'user2', 'user3', 'user4')`,
 	)
 
+	// migration to check whether DDL stmts are getting rollbacked
+	// correctly if something goes wrong
+	mh.RegisterMigration(
+		"2019-09-04:15:08:53",
+		"CREATE TABLE test_migration (id INTEGER); asdfasd;",
+		"DROP TABLE test_migration;",
+	)
+
 	if err := db.InitSchema(false); err != nil {
 		t.Fatalf("fail init schema: %v", err)
 	}
@@ -161,5 +174,17 @@ func TestBadMigration(t *testing.T) {
 	}
 	if count := db.MustCount(&SchemaMigration{}); count != 0 {
 		t.Fatalf("not all migrations were reseted")
+	}
+
+	if err := db.ExecuteMigration("2019-09-04:15:08:53"); err == nil {
+		t.Error("ExecuteMigration should have failed on bad syntax, was nil")
+	}
+	ts := make([]TestMigration, 0)
+	err = db.Select(&ts, sqlq.IN("id", ""))
+	if err == nil {
+		t.Error("Table test_migration should not exist, rollback doesn't work")
+	}
+	if err := db.Reset(); err != nil {
+		t.Fatalf("fail reset migraitons")
 	}
 }
